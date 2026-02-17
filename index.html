@@ -1,123 +1,285 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NIS Hackathon - Water Level Control</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIS Hackathon - Water Control</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0D47A1, #1E88E5);
+            background: linear-gradient(135deg, #0D47A1, #1565C0);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
         }
-        .container { max-width: 800px; margin: 0 auto; }
+        
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto; 
+        }
+        
+        header {
+            text-align: center;
+            padding: 10px 0 20px;
+        }
+        
         h1 { 
             color: white; 
-            text-align: center; 
-            margin-bottom: 10px;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            margin-bottom: 5px;
         }
+        
         .subtitle {
             color: rgba(255,255,255,0.8);
-            text-align: center;
-            margin-bottom: 30px;
+            font-size: clamp(0.8rem, 3vw, 1rem);
         }
+        
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        
+        .connected { color: #2E7D32; }
+        .disconnected { color: #C62828; }
+        
         .card {
             background: white;
             border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
+        
         .device-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
-        .device-name { font-size: 18px; font-weight: bold; }
-        .device-location { color: #666; font-size: 14px; }
+        
+        .device-name { 
+            font-size: clamp(1rem, 4vw, 1.2rem); 
+            font-weight: bold; 
+        }
+        
+        .device-location { 
+            color: #666; 
+            font-size: clamp(0.75rem, 3vw, 0.9rem); 
+        }
+        
         .status-badge {
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: clamp(0.65rem, 2.5vw, 0.75rem);
             font-weight: bold;
         }
-        .normal { background: #E8F5E9; color: #2E7D32; }
-        .warning { background: #FFF3E0; color: #F57C00; }
-        .flood { background: #FFEBEE; color: #C62828; }
-        .drought { background: #FFF8E1; color: #F9A825; }
+        
+        .Normal { background: #E8F5E9; color: #2E7D32; }
+        .Warning { background: #FFF3E0; color: #F57C00; }
+        .Flood { background: #FFEBEE; color: #C62828; }
+        .Drought { background: #FFF8E1; color: #F9A825; }
+        
+        .level-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .water-bar-container {
+            width: 50px;
+            height: 100px;
+            background: #E0E0E0;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .water-bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: height 0.5s ease-out, background 0.3s ease;
+            border-radius: 0 0 6px 6px;
+        }
+        
+        .water-bar-scale {
+            position: absolute;
+            right: 2px;
+            top: 4px;
+            bottom: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 8px;
+            color: #999;
+        }
+        
+        .level-info {
+            flex: 1;
+            text-align: center;
+        }
         
         .level-display {
-            font-size: 48px;
+            font-size: clamp(2rem, 8vw, 3rem);
             font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
+            transition: color 0.3s ease;
         }
-        .unit { font-size: 20px; color: #666; }
         
-        .slider-container { margin: 20px 0; }
+        .unit { 
+            font-size: clamp(0.8rem, 3vw, 1rem); 
+            color: #666; 
+        }
+        
+        .slider-container { 
+            margin: 15px 0;
+            padding: 0 5px;
+        }
+        
         .slider {
             width: 100%;
-            height: 30px;
+            height: 40px;
             -webkit-appearance: none;
-            border-radius: 15px;
+            appearance: none;
+            background: linear-gradient(to right, 
+                #F57C00 0%, #F57C00 20%, 
+                #4CAF50 20%, #4CAF50 80%, 
+                #E53935 80%, #E53935 100%);
+            border-radius: 20px;
             outline: none;
+            cursor: pointer;
         }
+        
         .slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 30px;
-            height: 30px;
+            appearance: none;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: #1E88E5;
+            background: white;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 3px solid #1E88E5;
+            transition: transform 0.15s ease;
+        }
+        
+        .slider::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 3px solid #1E88E5;
         }
         
         .quick-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
         }
+        
         .quick-btn {
-            flex: 1;
-            padding: 12px;
+            padding: 12px 8px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
+            font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            touch-action: manipulation;
         }
+        
+        .quick-btn:active { 
+            transform: scale(0.95); 
+        }
+        
         .btn-low { background: #FFF3E0; color: #F57C00; }
         .btn-normal { background: #E8F5E9; color: #2E7D32; }
         .btn-flood { background: #FFEBEE; color: #C62828; }
         
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
+        .init-btn {
+            display: block;
+            margin: 0 auto 15px;
+            padding: 12px 24px;
             background: white;
-            padding: 10px 20px;
-            border-radius: 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: clamp(0.8rem, 3vw, 1rem);
             font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
         }
-        .connected { color: #2E7D32; }
-        .disconnected { color: #C62828; }
+        
+        .init-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .card { padding: 12px; margin-bottom: 10px; }
+            .device-header { margin-bottom: 8px; }
+            .level-section { gap: 10px; margin: 10px 0; }
+            .water-bar-container { width: 40px; height: 80px; }
+            .quick-buttons { gap: 6px; }
+            .quick-btn { padding: 10px 6px; }
+            .connection-status { 
+                top: 5px; 
+                right: 5px; 
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+        }
+        
+        @media (hover: hover) {
+            .quick-btn:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .slider::-webkit-slider-thumb:hover {
+                transform: scale(1.1);
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="status">
-        🔴 Connecting...
-    </div>
+    <div class="connection-status" id="status">🔴 Connecting...</div>
     
     <div class="container">
-        <h1>🌊 NIS Hackathon</h1>
-        <p class="subtitle">Water Level Remote Control Panel</p>
+        <header>
+            <h1>🌊 NIS Hackathon</h1>
+            <p class="subtitle">Water Level Remote Control</p>
+        </header>
         
-        <div id="devices"></div>
+        <button class="init-btn" onclick="initializeData()" id="initBtn">⚡ Initialize Demo Data</button>
+        
+        <div id="devices">
+            <div class="card" style="text-align: center; color: #666;">
+                <p>Loading devices...</p>
+            </div>
+        </div>
     </div>
 
     <script>
-        // REPLACE WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBcbhQ-cydDbzgTC-LQp8F6JH0bGXP0ZXw",
             authDomain: "nis-hackathon-5bdb8.firebaseapp.com",
@@ -128,11 +290,9 @@
             appId: "1:302679473512:web:3a31f19473565060d6aadd"
         };
         
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        // Initial devices data
         const initialDevices = {
             "1": { id: "1", name: "Ural River Station", location: "Uralsk", level: 145.5, status: "Normal" },
             "2": { id: "2", name: "KPO Reservoir", location: "Karachaganak", level: 198.2, status: "Warning" },
@@ -141,14 +301,11 @@
             "5": { id: "5", name: "Kigach River", location: "Kigach", level: 225.3, status: "Flood" }
         };
         
-        // Initialize devices if not exists
-        database.ref('devices').once('value', (snapshot) => {
-            if (!snapshot.exists()) {
-                database.ref('devices').set(initialDevices);
-            }
-        });
+        function initializeData() {
+            database.ref('devices').set(initialDevices);
+            document.getElementById('initBtn').style.display = 'none';
+        }
         
-        // Calculate status based on level
         function getStatus(level) {
             if (level > 200) return "Flood";
             if (level > 180) return "Warning";
@@ -156,23 +313,36 @@
             return "Normal";
         }
         
-        // Update device level
-        function updateDevice(id, level) {
-            const status = getStatus(level);
-            database.ref(`devices/${id}`).update({
-                level: parseFloat(level),
-                status: status
-            });
+        function getStatusColor(status) {
+            switch(status) {
+                case 'Flood': return '#E53935';
+                case 'Warning': return '#F57C00';
+                case 'Drought': return '#F9A825';
+                default: return '#4CAF50';
+            }
         }
         
-        // Render devices
+        // Debounce function for smoother updates
+        let updateTimeout = {};
+        function updateDevice(id, level) {
+            if (updateTimeout[id]) clearTimeout(updateTimeout[id]);
+            updateTimeout[id] = setTimeout(() => {
+                const status = getStatus(level);
+                database.ref(`devices/${id}`).update({
+                    level: parseFloat(level),
+                    status: status
+                });
+            }, 50);
+        }
+        
         function renderDevices(snapshot) {
             const container = document.getElementById('devices');
             container.innerHTML = '';
             
             snapshot.forEach((child) => {
                 const device = child.val();
-                const statusClass = device.status.toLowerCase();
+                const fillPercent = (device.level / 250) * 100;
+                const statusColor = getStatusColor(device.status);
                 
                 const card = document.createElement('div');
                 card.className = 'card';
@@ -182,37 +352,59 @@
                             <div class="device-name">${device.name}</div>
                             <div class="device-location">📍 ${device.location}</div>
                         </div>
-                        <span class="status-badge ${statusClass}">${device.status.toUpperCase()}</span>
+                        <span class="status-badge ${device.status}">${device.status.toUpperCase()}</span>
                     </div>
                     
-                    <div class="level-display">
-                        ${device.level.toFixed(1)} <span class="unit">cm</span>
+                    <div class="level-section">
+                        <div class="water-bar-container">
+                            <div class="water-bar-fill" style="height: ${fillPercent}%; background: linear-gradient(to top, ${statusColor}, ${statusColor}88);"></div>
+                            <div class="water-bar-scale">
+                                <span>250</span>
+                                <span>200</span>
+                                <span>150</span>
+                                <span>100</span>
+                                <span>50</span>
+                                <span>0</span>
+                            </div>
+                        </div>
+                        <div class="level-info">
+                            <div class="level-display" style="color: ${statusColor}">
+                                ${device.level.toFixed(1)}<span class="unit"> cm</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="slider-container">
-                        <input type="range" class="slider" min="0" max="250" value="${device.level}"
-                               oninput="updateDevice('${device.id}', this.value)"
-                               style="background: linear-gradient(to right, #F57C00 0%, #4CAF50 40%, #4CAF50 80%, #C62828 80%);">
+                        <input type="range" class="slider" 
+                               min="0" max="250" step="0.1"
+                               value="${device.level}"
+                               oninput="updateDevice('${device.id}', this.value)">
                     </div>
                     
                     <div class="quick-buttons">
-                        <button class="quick-btn btn-low" onclick="updateDevice('${device.id}', 45)">Low (45cm)</button>
-                        <button class="quick-btn btn-normal" onclick="updateDevice('${device.id}', 150)">Normal (150cm)</button>
-                        <button class="quick-btn btn-flood" onclick="updateDevice('${device.id}', 230)">Flood (230cm)</button>
+                        <button class="quick-btn btn-low" onclick="updateDevice('${device.id}', 45)">📉 Low<br><small>45 cm</small></button>
+                        <button class="quick-btn btn-normal" onclick="updateDevice('${device.id}', 150)">✅ Normal<br><small>150 cm</small></button>
+                        <button class="quick-btn btn-flood" onclick="updateDevice('${device.id}', 230)">🚨 Flood<br><small>230 cm</small></button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
         
-        // Listen for changes
         database.ref('devices').on('value', (snapshot) => {
             renderDevices(snapshot);
             document.getElementById('status').innerHTML = '🟢 Connected';
             document.getElementById('status').className = 'connection-status connected';
         }, (error) => {
-            document.getElementById('status').innerHTML = '🔴 Disconnected';
+            document.getElementById('status').innerHTML = '🔴 Error';
             document.getElementById('status').className = 'connection-status disconnected';
+        });
+        
+        // Check if data exists
+        database.ref('devices').once('value', (snapshot) => {
+            if (snapshot.exists() && snapshot.numChildren() > 0) {
+                document.getElementById('initBtn').style.display = 'none';
+            }
         });
     </script>
 </body>
