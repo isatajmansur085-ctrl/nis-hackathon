@@ -1,21 +1,29 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NIS Hackathon - Water Control Panel</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        html, body {
+            overflow-x: hidden;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #0a192f 0%, #1a365d 50%, #0d47a1 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
+            padding-bottom: 40px;
             color: #ffffff;
         }
 
@@ -26,7 +34,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
@@ -34,9 +42,9 @@
         }
 
         h1 {
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #64b5f6, #42a5f5, #2196f3);
+            font-size: clamp(1.4rem, 5vw, 2.2rem);
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #64b5f6, #42a5f5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -44,18 +52,18 @@
 
         .subtitle {
             color: #90caf9;
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-size: clamp(0.85rem, 3vw, 1rem);
         }
 
         .connection-status {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-top: 15px;
-            padding: 8px 16px;
+            margin-top: 12px;
+            padding: 6px 14px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .status-dot {
@@ -66,117 +74,77 @@
             animation: pulse 2s infinite;
         }
 
-        .status-dot.disconnected {
-            background: #f44336;
-            animation: none;
-        }
-
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.9); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .devices-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
         }
 
         .device-card {
             background: rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            padding: 25px;
+            border-radius: 20px;
+            padding: 20px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .device-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
         .device-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .device-name {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            color: #ffffff;
         }
 
         .device-location {
             color: #90caf9;
-            font-size: 0.9rem;
-            margin-top: 4px;
+            font-size: 0.85rem;
+            margin-top: 2px;
         }
 
         .status-badge {
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .status-normal {
-            background: linear-gradient(135deg, #43a047, #2e7d32);
-            color: #ffffff;
-        }
-
-        .status-warning {
-            background: linear-gradient(135deg, #ffa000, #ff8f00);
-            color: #000000;
-        }
-
-        .status-critical {
-            background: linear-gradient(135deg, #e53935, #c62828);
-            color: #ffffff;
-            animation: criticalPulse 1s infinite;
-        }
+        .status-normal { background: linear-gradient(135deg, #43a047, #2e7d32); }
+        .status-warning { background: linear-gradient(135deg, #ffa000, #ff8f00); color: #000; }
+        .status-critical { background: linear-gradient(135deg, #e53935, #c62828); animation: criticalPulse 1s infinite; }
 
         @keyframes criticalPulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4); }
-            50% { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+            50% { box-shadow: 0 0 0 8px rgba(229, 57, 53, 0); }
         }
 
-        /* Vertical Bar Container */
+        /* Vertical Bar */
         .bar-container {
             display: flex;
             justify-content: center;
-            align-items: flex-end;
-            gap: 20px;
-            margin: 30px 0;
-            height: 200px;
-        }
-
-        .bar-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bar-label {
-            font-size: 0.8rem;
-            color: #90caf9;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 20px 0;
         }
 
         .vertical-bar {
-            width: 60px;
+            width: 70px;
             height: 180px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 35px;
             position: relative;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.15);
         }
 
         .bar-fill {
@@ -184,298 +152,229 @@
             bottom: 0;
             left: 0;
             right: 0;
+            border-radius: 32px;
+            transition: height 0.1s ease-out;
             background: linear-gradient(180deg, #64b5f6, #2196f3, #1976d2);
-            border-radius: 28px;
-            transition: height 0.15s ease-out, background 0.3s ease;
         }
 
-        .bar-fill.warning {
-            background: linear-gradient(180deg, #ffb74d, #ffa000, #ff8f00);
-        }
-
-        .bar-fill.critical {
-            background: linear-gradient(180deg, #ef5350, #e53935, #c62828);
-        }
+        .bar-fill.warning { background: linear-gradient(180deg, #ffb74d, #ffa000); }
+        .bar-fill.critical { background: linear-gradient(180deg, #ef5350, #e53935); }
 
         .percentage-value {
             position: absolute;
-            bottom: 10px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
             z-index: 2;
         }
 
-        /* Super Smooth Slider */
-        .slider-container {
-            margin-top: 25px;
+        /* ========== SUPER SMOOTH SLIDER ========== */
+        .slider-section {
+            margin-top: 20px;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.25);
             border-radius: 16px;
         }
 
-        .slider-label {
+        .slider-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .slider-title {
             font-size: 0.9rem;
             color: #b0bec5;
         }
 
-        .slider-value {
-            font-weight: 600;
+        .slider-value-display {
+            font-size: 1.8rem;
+            font-weight: 700;
             color: #64b5f6;
-            font-size: 1.1rem;
+            min-width: 80px;
+            text-align: right;
         }
 
-        .smooth-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 12px;
-            background: linear-gradient(90deg, 
-                #43a047 0%, 
-                #43a047 25%, 
-                #ffa000 25%, 
-                #ffa000 50%, 
-                #ff5722 50%, 
-                #ff5722 75%, 
-                #e53935 75%, 
-                #e53935 100%);
-            border-radius: 6px;
-            outline: none;
-            cursor: pointer;
+        /* Custom Slider Container */
+        .custom-slider-container {
             position: relative;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
         }
 
-        .smooth-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #ffffff, #e3f2fd);
+        /* Track Background with zones */
+        .slider-track {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: linear-gradient(90deg, 
+                #2e7d32 0%, #43a047 30%,
+                #ff8f00 30%, #ffa000 50%,
+                #ff5722 50%, #e64a19 70%,
+                #c62828 70%, #e53935 100%
+            );
+            opacity: 0.8;
+        }
+
+        /* Active fill */
+        .slider-fill {
+            position: absolute;
+            left: 0;
+            height: 20px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            transition: width 0.05s linear;
+        }
+
+        /* THE BIG SMOOTH THUMB */
+        .slider-thumb {
+            position: absolute;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            cursor: grab;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 
-                        0 0 0 4px rgba(33, 150, 243, 0.3);
+            background: linear-gradient(145deg, #ffffff, #e3f2fd);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 0 0 4px rgba(33, 150, 243, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            transform: translateX(-50%);
             transition: transform 0.1s ease, box-shadow 0.2s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .smooth-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 
-                        0 0 0 6px rgba(33, 150, 243, 0.4);
+        .slider-thumb::after {
+            content: '≡';
+            font-size: 24px;
+            color: #1976d2;
+            font-weight: bold;
         }
 
-        .smooth-slider::-webkit-slider-thumb:active {
-            cursor: grabbing;
-            transform: scale(1.15);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 
-                        0 0 0 8px rgba(33, 150, 243, 0.5);
+        .slider-thumb:active, .slider-thumb.active {
+            transform: translateX(-50%) scale(1.15);
+            box-shadow: 
+                0 6px 30px rgba(0, 0, 0, 0.5),
+                0 0 0 6px rgba(33, 150, 243, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
         }
 
-        .smooth-slider::-moz-range-thumb {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #ffffff, #e3f2fd);
-            border-radius: 50%;
-            cursor: grab;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 
-                        0 0 0 4px rgba(33, 150, 243, 0.3);
-        }
-
-        .smooth-slider::-moz-range-thumb:hover {
-            transform: scale(1.1);
-        }
-
-        /* Quick Action Buttons */
+        /* Quick Buttons */
         .quick-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
         }
 
         .quick-btn {
             flex: 1;
-            min-width: 60px;
-            padding: 10px 15px;
+            padding: 14px 8px;
             border: none;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
 
-        .quick-btn.empty {
-            background: linear-gradient(135deg, #37474f, #263238);
-            color: #b0bec5;
-        }
-
-        .quick-btn.half {
-            background: linear-gradient(135deg, #43a047, #2e7d32);
-            color: #ffffff;
-        }
-
-        .quick-btn.full {
-            background: linear-gradient(135deg, #2196f3, #1976d2);
-            color: #ffffff;
-        }
-
-        .quick-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
+        .quick-btn.empty { background: linear-gradient(135deg, #37474f, #263238); color: #b0bec5; }
+        .quick-btn.half { background: linear-gradient(135deg, #43a047, #2e7d32); color: #fff; }
+        .quick-btn.full { background: linear-gradient(135deg, #2196f3, #1976d2); color: #fff; }
 
         .quick-btn:active {
-            transform: scale(0.98);
+            transform: scale(0.95);
         }
 
-        /* Loading State */
+        /* Update indicator */
+        .update-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .update-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading */
         .loading-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(10, 25, 47, 0.9);
+            inset: 0;
+            background: rgba(10, 25, 47, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
         }
 
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
 
         .spinner {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border: 4px solid rgba(33, 150, 243, 0.3);
             border-top-color: #2196f3;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .loading-text {
-            margin-top: 20px;
-            font-size: 1.1rem;
-            color: #90caf9;
-        }
-
-        /* Update Indicator */
-        .update-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            border-radius: 25px;
-            font-size: 0.9rem;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-
-        .update-indicator.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-
-            .devices-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .device-card {
-                padding: 20px;
-            }
-
-            .vertical-bar {
-                width: 50px;
-                height: 150px;
-            }
-
-            .bar-container {
-                height: 170px;
-            }
-
-            .smooth-slider::-webkit-slider-thumb {
-                width: 36px;
-                height: 36px;
-            }
-
-            .quick-btn {
-                padding: 12px 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .device-header {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .vertical-bar {
-                width: 40px;
-                height: 120px;
-            }
-
-            .bar-container {
-                height: 140px;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .quick-actions {
-                flex-direction: row;
-            }
+        /* Mobile optimizations */
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .devices-grid { grid-template-columns: 1fr; }
+            .device-card { padding: 16px; }
+            .vertical-bar { width: 60px; height: 150px; }
+            .slider-thumb { width: 64px; height: 64px; }
+            .slider-thumb::after { font-size: 28px; }
+            .quick-btn { padding: 16px 8px; font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <div class="loading-text">Connecting to Firebase...</div>
+        <p style="margin-top: 16px; color: #90caf9;">Connecting...</p>
     </div>
 
-    <div class="update-indicator" id="updateIndicator">✓ Synced</div>
+    <div class="update-toast" id="updateToast">✓ Synced to Firebase</div>
 
     <div class="container">
         <header>
             <h1>🌊 NIS Hackathon</h1>
             <p class="subtitle">Water Level Control Panel</p>
             <div class="connection-status">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="connectionText">Connected</span>
+                <div class="status-dot"></div>
+                <span>Connected</span>
             </div>
         </header>
 
-        <div class="devices-grid" id="devicesGrid">
-            <!-- Devices will be loaded here -->
-        </div>
+        <div class="devices-grid" id="devicesGrid"></div>
     </div>
 
     <script type="module">
@@ -486,57 +385,26 @@
             apiKey: "AIzaSyBcbhQ-cydDbzgTC-LQp8F6JH0bGXP0ZXw",
             authDomain: "nis-hackathon-5bdb8.firebaseapp.com",
             databaseURL: "https://nis-hackathon-5bdb8-default-rtdb.firebaseio.com",
-            projectId: "nis-hackathon-5bdb8",
-            storageBucket: "nis-hackathon-5bdb8.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
+            projectId: "nis-hackathon-5bdb8"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const devicesRef = ref(db, 'devices');
 
-        // Throttle function for ultra-smooth updates
-        function throttle(func, limit) {
-            let inThrottle;
-            return function(...args) {
-                if (!inThrottle) {
-                    func.apply(this, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            }
+        // Show toast notification
+        function showToast() {
+            const toast = document.getElementById('updateToast');
+            toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 800);
         }
 
-        // Debounced update with immediate visual feedback
-        let updateTimeout = null;
-        function updateDeviceLevel(deviceId, newLevel) {
-            // Immediate local update for smooth visual
-            const card = document.querySelector(`[data-device-id="${deviceId}"]`);
-            if (card) {
-                updateBarDisplay(card, newLevel);
-                updateSliderValue(card, newLevel);
-            }
-            
-            // Throttled Firebase update (every 50ms for smooth sync)
-            clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(() => {
-                const deviceRef = ref(db, `devices/${deviceId}/level`);
-                set(deviceRef, newLevel);
-                showUpdateIndicator();
-            }, 50);
-        }
-
-        function showUpdateIndicator() {
-            const indicator = document.getElementById('updateIndicator');
-            indicator.classList.add('show');
-            setTimeout(() => indicator.classList.remove('show'), 1000);
-        }
-
+        // Get status from level
         function getStatus(level) {
-            if (level >= 75) return { text: 'CRITICAL', class: 'critical' };
-            if (level >= 50) return { text: 'WARNING', class: 'warning' };
-            return { text: 'NORMAL', class: 'normal' };
+            if (level >= 75) return { text: 'CRITICAL', cls: 'critical' };
+            if (level >= 50) return { text: 'WARNING', cls: 'warning' };
+            return { text: 'NORMAL', cls: 'normal' };
         }
 
         function getBarClass(level) {
@@ -545,163 +413,190 @@
             return '';
         }
 
-        function updateBarDisplay(card, level) {
+        // Update device card visuals
+        function updateCardVisuals(card, level) {
             const barFill = card.querySelector('.bar-fill');
             const percentage = card.querySelector('.percentage-value');
-            
-            barFill.style.height = `${level}%`;
-            percentage.textContent = `${Math.round(level)}%`;
-            
-            // Update bar color
+            const statusBadge = card.querySelector('.status-badge');
+            const valueDisplay = card.querySelector('.slider-value-display');
+
+            barFill.style.height = level + '%';
             barFill.className = 'bar-fill ' + getBarClass(level);
-            
-            // Update status badge
+            percentage.textContent = Math.round(level) + '%';
+            valueDisplay.textContent = Math.round(level) + '%';
+
             const status = getStatus(level);
-            const badge = card.querySelector('.status-badge');
-            badge.textContent = status.text;
-            badge.className = 'status-badge status-' + status.class;
+            statusBadge.textContent = status.text;
+            statusBadge.className = 'status-badge status-' + status.cls;
         }
 
-        function updateSliderValue(card, level) {
-            const sliderValue = card.querySelector('.slider-value');
-            sliderValue.textContent = `${Math.round(level)}%`;
-        }
-
+        // Create device card HTML
         function createDeviceCard(device) {
             const status = getStatus(device.level);
             const barClass = getBarClass(device.level);
 
             return `
-                <div class="device-card" data-device-id="${device.id}">
+                <div class="device-card" data-id="${device.id}">
                     <div class="device-header">
                         <div>
                             <div class="device-name">${device.name}</div>
                             <div class="device-location">📍 ${device.location}</div>
                         </div>
-                        <div class="status-badge status-${status.class}">${status.text}</div>
+                        <div class="status-badge status-${status.cls}">${status.text}</div>
                     </div>
                     
                     <div class="bar-container">
-                        <div class="bar-wrapper">
-                            <div class="vertical-bar">
-                                <div class="bar-fill ${barClass}" style="height: ${device.level}%"></div>
-                                <div class="percentage-value">${Math.round(device.level)}%</div>
-                            </div>
-                            <div class="bar-label">Water Level</div>
+                        <div class="vertical-bar">
+                            <div class="bar-fill ${barClass}" style="height: ${device.level}%"></div>
+                            <div class="percentage-value">${Math.round(device.level)}%</div>
                         </div>
                     </div>
                     
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>Adjust Level</span>
-                            <span class="slider-value">${Math.round(device.level)}%</span>
+                    <div class="slider-section">
+                        <div class="slider-header">
+                            <span class="slider-title">Adjust Level</span>
+                            <span class="slider-value-display">${Math.round(device.level)}%</span>
                         </div>
-                        <input type="range" 
-                               class="smooth-slider" 
-                               min="0" 
-                               max="100" 
-                               value="${device.level}"
-                               data-device-id="${device.id}">
+                        
+                        <div class="custom-slider-container" data-device="${device.id}">
+                            <div class="slider-track"></div>
+                            <div class="slider-fill" style="width: ${device.level}%"></div>
+                            <div class="slider-thumb" style="left: ${device.level}%"></div>
+                        </div>
                         
                         <div class="quick-actions">
-                            <button class="quick-btn empty" data-level="0" data-device-id="${device.id}">0%</button>
-                            <button class="quick-btn half" data-level="50" data-device-id="${device.id}">50%</button>
-                            <button class="quick-btn full" data-level="100" data-device-id="${device.id}">100%</button>
+                            <button class="quick-btn empty" data-level="0" data-device="${device.id}">0%</button>
+                            <button class="quick-btn half" data-level="50" data-device="${device.id}">50%</button>
+                            <button class="quick-btn full" data-level="100" data-device="${device.id}">100%</button>
                         </div>
                     </div>
                 </div>
             `;
         }
 
+        // Render all devices
         function renderDevices(devices) {
             const grid = document.getElementById('devicesGrid');
             grid.innerHTML = devices.map(createDeviceCard).join('');
-            attachEventListeners();
+            initSliders();
+            initQuickButtons();
         }
 
-        function attachEventListeners() {
-            // Ultra-smooth slider handling - update on EVERY tick
-            document.querySelectorAll('.smooth-slider').forEach(slider => {
-                // Use both input (real-time) and change events
-                slider.addEventListener('input', handleSliderInput);
-                slider.addEventListener('touchmove', handleSliderInput, { passive: true });
-                slider.addEventListener('touchend', handleSliderInput);
-            });
+        // ========== SUPER SMOOTH SLIDER LOGIC ==========
+        function initSliders() {
+            document.querySelectorAll('.custom-slider-container').forEach(container => {
+                const thumb = container.querySelector('.slider-thumb');
+                const fill = container.querySelector('.slider-fill');
+                const deviceId = container.dataset.device;
+                const card = container.closest('.device-card');
+                
+                let isDragging = false;
 
-            // Quick action buttons
+                function updateSliderPosition(clientX) {
+                    const rect = container.getBoundingClientRect();
+                    let percent = ((clientX - rect.left) / rect.width) * 100;
+                    percent = Math.max(0, Math.min(100, percent));
+                    
+                    // Instant visual update
+                    thumb.style.left = percent + '%';
+                    fill.style.width = percent + '%';
+                    updateCardVisuals(card, percent);
+                    
+                    // Send to Firebase immediately on every move
+                    const deviceRef = ref(db, `devices/${deviceId}/level`);
+                    set(deviceRef, Math.round(percent));
+                }
+
+                // Mouse events
+                container.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    thumb.classList.add('active');
+                    updateSliderPosition(e.clientX);
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        e.preventDefault();
+                        updateSliderPosition(e.clientX);
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        thumb.classList.remove('active');
+                        showToast();
+                    }
+                });
+
+                // Touch events - optimized for mobile
+                container.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    thumb.classList.add('active');
+                    updateSliderPosition(e.touches[0].clientX);
+                }, { passive: true });
+
+                container.addEventListener('touchmove', (e) => {
+                    if (isDragging) {
+                        e.preventDefault();
+                        updateSliderPosition(e.touches[0].clientX);
+                    }
+                }, { passive: false });
+
+                container.addEventListener('touchend', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        thumb.classList.remove('active');
+                        showToast();
+                    }
+                });
+            });
+        }
+
+        // Quick buttons
+        function initQuickButtons() {
             document.querySelectorAll('.quick-btn').forEach(btn => {
-                btn.addEventListener('click', handleQuickAction);
+                btn.addEventListener('click', () => {
+                    const level = parseInt(btn.dataset.level);
+                    const deviceId = btn.dataset.device;
+                    const card = btn.closest('.device-card');
+                    const container = card.querySelector('.custom-slider-container');
+                    const thumb = container.querySelector('.slider-thumb');
+                    const fill = container.querySelector('.slider-fill');
+
+                    // Animate to position
+                    thumb.style.transition = 'left 0.2s ease';
+                    fill.style.transition = 'width 0.2s ease';
+                    thumb.style.left = level + '%';
+                    fill.style.width = level + '%';
+                    updateCardVisuals(card, level);
+
+                    setTimeout(() => {
+                        thumb.style.transition = '';
+                        fill.style.transition = '';
+                    }, 200);
+
+                    // Update Firebase
+                    const deviceRef = ref(db, `devices/${deviceId}/level`);
+                    set(deviceRef, level).then(showToast);
+                });
             });
         }
 
-        function handleSliderInput(e) {
-            const deviceId = e.target.dataset.deviceId;
-            const newLevel = parseFloat(e.target.value);
-            
-            // Immediate visual feedback
-            const card = document.querySelector(`[data-device-id="${deviceId}"]`);
-            if (card) {
-                updateBarDisplay(card, newLevel);
-                updateSliderValue(card, newLevel);
-            }
-            
-            // Send to Firebase with minimal throttle for smooth updates
-            const deviceRef = ref(db, `devices/${deviceId}/level`);
-            set(deviceRef, newLevel).then(() => {
-                showUpdateIndicator();
-            });
-        }
-
-        function handleQuickAction(e) {
-            const deviceId = e.target.dataset.deviceId;
-            const level = parseFloat(e.target.dataset.level);
-            
-            // Update slider position
-            const slider = document.querySelector(`.smooth-slider[data-device-id="${deviceId}"]`);
-            if (slider) {
-                slider.value = level;
-            }
-            
-            // Update visuals
-            const card = document.querySelector(`[data-device-id="${deviceId}"]`);
-            if (card) {
-                updateBarDisplay(card, level);
-                updateSliderValue(card, level);
-            }
-            
-            // Update Firebase
-            const deviceRef = ref(db, `devices/${deviceId}/level`);
-            set(deviceRef, level).then(() => {
-                showUpdateIndicator();
-            });
-        }
-
-        // Listen for real-time updates from Firebase
+        // Listen for Firebase updates
         onValue(devicesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const devicesArray = Object.keys(data).map(key => ({
-                    id: key,
-                    ...data[key]
+                const devices = Object.keys(data).map(id => ({
+                    id,
+                    name: data[id].name || 'Device',
+                    location: data[id].location || 'Unknown',
+                    level: data[id].level ?? 50
                 }));
-                renderDevices(devicesArray);
+                renderDevices(devices);
             }
-            
-            // Hide loading overlay
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }, (error) => {
-            console.error('Firebase error:', error);
-            document.getElementById('statusDot').classList.add('disconnected');
-            document.getElementById('connectionText').textContent = 'Disconnected';
             document.getElementById('loadingOverlay').classList.add('hidden');
         });
-
-        // Initial devices (fallback)
-        const defaultDevices = [
-            { id: 'device1', name: 'River Station Alpha', location: 'North Dam', level: 35, status: 'Normal' },
-            { id: 'device2', name: 'Reservoir Beta', location: 'Central Valley', level: 62, status: 'Warning' },
-            { id: 'device3', name: 'Flood Gate Gamma', location: 'Southern Basin', level: 85, status: 'Critical' }
-        ];
     </script>
 </body>
 </html>
