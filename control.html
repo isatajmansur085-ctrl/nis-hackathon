@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NIS Hackathon - Water Level Control</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0D47A1, #1E88E5);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { 
+            color: white; 
+            text-align: center; 
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .device-name { font-size: 18px; font-weight: bold; }
+        .device-location { color: #666; font-size: 14px; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .normal { background: #E8F5E9; color: #2E7D32; }
+        .warning { background: #FFF3E0; color: #F57C00; }
+        .flood { background: #FFEBEE; color: #C62828; }
+        .drought { background: #FFF8E1; color: #F9A825; }
+        
+        .level-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .unit { font-size: 20px; color: #666; }
+        
+        .slider-container { margin: 20px 0; }
+        .slider {
+            width: 100%;
+            height: 30px;
+            -webkit-appearance: none;
+            border-radius: 15px;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #1E88E5;
+            cursor: pointer;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .quick-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-low { background: #FFF3E0; color: #F57C00; }
+        .btn-normal { background: #E8F5E9; color: #2E7D32; }
+        .btn-flood { background: #FFEBEE; color: #C62828; }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .connected { color: #2E7D32; }
+        .disconnected { color: #C62828; }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="status">
+        🔴 Connecting...
+    </div>
+    
+    <div class="container">
+        <h1>🌊 NIS Hackathon</h1>
+        <p class="subtitle">Water Level Remote Control Panel</p>
+        
+        <div id="devices"></div>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcbhQ-cydDbzgTC-LQp8F6JH0bGXP0ZXw",
+            authDomain: "nis-hackathon-5bdb8.firebaseapp.com",
+            databaseURL: "https://nis-hackathon-5bdb8-default-rtdb.firebaseio.com",
+            projectId: "nis-hackathon-5bdb8",
+            storageBucket: "nis-hackathon-5bdb8.appspot.com",
+            messagingSenderId: "302679473512",
+            appId: "1:302679473512:web:3a31f19473565060d6aadd"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Initial devices data
+        const initialDevices = {
+            "1": { id: "1", name: "Ural River Station", location: "Uralsk", level: 145.5, status: "Normal" },
+            "2": { id: "2", name: "KPO Reservoir", location: "Karachaganak", level: 198.2, status: "Warning" },
+            "3": { id: "3", name: "Ilek River", location: "Ilek", level: 42.1, status: "Drought" },
+            "4": { id: "4", name: "Lake Shalkar", location: "Shalkar", level: 167.8, status: "Normal" },
+            "5": { id: "5", name: "Kigach River", location: "Kigach", level: 225.3, status: "Flood" }
+        };
+        
+        // Initialize devices if not exists
+        database.ref('devices').once('value', (snapshot) => {
+            if (!snapshot.exists()) {
+                database.ref('devices').set(initialDevices);
+            }
+        });
+        
+        // Calculate status based on level
+        function getStatus(level) {
+            if (level > 200) return "Flood";
+            if (level > 180) return "Warning";
+            if (level < 50) return "Drought";
+            return "Normal";
+        }
+        
+        // Update device level
+        function updateDevice(id, level) {
+            const status = getStatus(level);
+            database.ref(`devices/${id}`).update({
+                level: parseFloat(level),
+                status: status
+            });
+        }
+        
+        // Render devices
+        function renderDevices(snapshot) {
+            const container = document.getElementById('devices');
+            container.innerHTML = '';
+            
+            snapshot.forEach((child) => {
+                const device = child.val();
+                const statusClass = device.status.toLowerCase();
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="device-header">
+                        <div>
+                            <div class="device-name">${device.name}</div>
+                            <div class="device-location">📍 ${device.location}</div>
+                        </div>
+                        <span class="status-badge ${statusClass}">${device.status.toUpperCase()}</span>
+                    </div>
+                    
+                    <div class="level-display">
+                        ${device.level.toFixed(1)} <span class="unit">cm</span>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <input type="range" class="slider" min="0" max="250" value="${device.level}"
+                               oninput="updateDevice('${device.id}', this.value)"
+                               style="background: linear-gradient(to right, #F57C00 0%, #4CAF50 40%, #4CAF50 80%, #C62828 80%);">
+                    </div>
+                    
+                    <div class="quick-buttons">
+                        <button class="quick-btn btn-low" onclick="updateDevice('${device.id}', 45)">Low (45cm)</button>
+                        <button class="quick-btn btn-normal" onclick="updateDevice('${device.id}', 150)">Normal (150cm)</button>
+                        <button class="quick-btn btn-flood" onclick="updateDevice('${device.id}', 230)">Flood (230cm)</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // Listen for changes
+        database.ref('devices').on('value', (snapshot) => {
+            renderDevices(snapshot);
+            document.getElementById('status').innerHTML = '🟢 Connected';
+            document.getElementById('status').className = 'connection-status connected';
+        }, (error) => {
+            document.getElementById('status').innerHTML = '🔴 Disconnected';
+            document.getElementById('status').className = 'connection-status disconnected';
+        });
+    </script>
+</body>
+</html>
