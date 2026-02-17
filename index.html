@@ -5,17 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NIS Hackathon - Water Control Panel</title>
+    
+    <!-- noUiSlider CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        html, body {
-            overflow-x: hidden;
         }
 
         body {
@@ -38,7 +37,6 @@
             padding: 20px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            backdrop-filter: blur(10px);
         }
 
         h1 {
@@ -47,7 +45,6 @@
             background: linear-gradient(90deg, #64b5f6, #42a5f5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .subtitle {
@@ -89,7 +86,6 @@
             background: rgba(255, 255, 255, 0.08);
             border-radius: 20px;
             padding: 20px;
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -123,12 +119,7 @@
 
         .status-normal { background: linear-gradient(135deg, #43a047, #2e7d32); }
         .status-warning { background: linear-gradient(135deg, #ffa000, #ff8f00); color: #000; }
-        .status-critical { background: linear-gradient(135deg, #e53935, #c62828); animation: criticalPulse 1s infinite; }
-
-        @keyframes criticalPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(229, 57, 53, 0); }
-        }
+        .status-critical { background: linear-gradient(135deg, #e53935, #c62828); }
 
         /* Vertical Bar */
         .bar-container {
@@ -153,7 +144,7 @@
             left: 0;
             right: 0;
             border-radius: 32px;
-            transition: height 0.1s ease-out;
+            transition: height 0.1s linear;
             background: linear-gradient(180deg, #64b5f6, #2196f3, #1976d2);
         }
 
@@ -171,7 +162,7 @@
             z-index: 2;
         }
 
-        /* ========== SUPER SMOOTH SLIDER ========== */
+        /* Slider Section */
         .slider-section {
             margin-top: 20px;
             padding: 20px;
@@ -199,75 +190,82 @@
             text-align: right;
         }
 
-        /* Custom Slider Container */
-        .custom-slider-container {
-            position: relative;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
+        /* ========== noUiSlider Custom Styles ========== */
+        .slider-wrapper {
+            padding: 10px 0;
         }
 
-        /* Track Background with zones */
-        .slider-track {
-            position: absolute;
-            left: 0;
-            right: 0;
+        .noUi-target {
+            background: transparent;
+            border: none;
+            box-shadow: none;
             height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
+        }
+
+        .noUi-base {
             background: linear-gradient(90deg, 
-                #2e7d32 0%, #43a047 30%,
-                #ff8f00 30%, #ffa000 50%,
-                #ff5722 50%, #e64a19 70%,
-                #c62828 70%, #e53935 100%
+                #43a047 0%, #43a047 33%,
+                #ffa000 33%, #ffa000 66%,
+                #e53935 66%, #e53935 100%
             );
-            opacity: 0.8;
-        }
-
-        /* Active fill */
-        .slider-fill {
-            position: absolute;
-            left: 0;
-            height: 20px;
             border-radius: 10px;
-            background: rgba(255, 255, 255, 0.3);
-            pointer-events: none;
-            transition: width 0.05s linear;
+            height: 16px;
         }
 
-        /* THE BIG SMOOTH THUMB */
-        .slider-thumb {
-            position: absolute;
-            width: 56px;
-            height: 56px;
+        .noUi-connect {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
+        }
+
+        .noUi-handle {
+            width: 52px !important;
+            height: 52px !important;
+            right: -26px !important;
+            top: -18px !important;
             border-radius: 50%;
             background: linear-gradient(145deg, #ffffff, #e3f2fd);
+            border: none;
             box-shadow: 
                 0 4px 20px rgba(0, 0, 0, 0.4),
-                0 0 0 4px rgba(33, 150, 243, 0.4),
-                inset 0 2px 4px rgba(255, 255, 255, 0.8);
-            transform: translateX(-50%);
-            transition: transform 0.1s ease, box-shadow 0.2s ease;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+                0 0 0 4px rgba(33, 150, 243, 0.5);
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .slider-thumb::after {
-            content: '≡';
+        .noUi-handle::before,
+        .noUi-handle::after {
+            display: none;
+        }
+
+        /* Handle grip lines */
+        .noUi-handle::before {
+            content: '⋮';
+            display: block;
             font-size: 24px;
             color: #1976d2;
+            text-align: center;
+            line-height: 52px;
+            width: 100%;
             font-weight: bold;
         }
 
-        .slider-thumb:active, .slider-thumb.active {
-            transform: translateX(-50%) scale(1.15);
+        .noUi-handle:hover {
+            transform: scale(1.1);
             box-shadow: 
-                0 6px 30px rgba(0, 0, 0, 0.5),
-                0 0 0 6px rgba(33, 150, 243, 0.6),
-                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+                0 6px 25px rgba(0, 0, 0, 0.5),
+                0 0 0 6px rgba(33, 150, 243, 0.6);
+        }
+
+        .noUi-handle:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+
+        .noUi-active {
+            transform: scale(1.15);
+            box-shadow: 
+                0 8px 30px rgba(0, 0, 0, 0.6),
+                0 0 0 8px rgba(33, 150, 243, 0.7);
         }
 
         /* Quick Buttons */
@@ -296,7 +294,7 @@
             transform: scale(0.95);
         }
 
-        /* Update indicator */
+        /* Update toast */
         .update-toast {
             position: fixed;
             bottom: 30px;
@@ -310,7 +308,6 @@
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 100;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         .update-toast.show {
@@ -344,14 +341,24 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Mobile optimizations */
+        /* Mobile */
         @media (max-width: 600px) {
             body { padding: 12px; }
             .devices-grid { grid-template-columns: 1fr; }
             .device-card { padding: 16px; }
             .vertical-bar { width: 60px; height: 150px; }
-            .slider-thumb { width: 64px; height: 64px; }
-            .slider-thumb::after { font-size: 28px; }
+            
+            .noUi-handle {
+                width: 60px !important;
+                height: 60px !important;
+                right: -30px !important;
+                top: -22px !important;
+            }
+            
+            .noUi-handle::before {
+                line-height: 60px;
+            }
+            
             .quick-btn { padding: 16px 8px; font-size: 1.1rem; }
         }
     </style>
@@ -362,7 +369,7 @@
         <p style="margin-top: 16px; color: #90caf9;">Connecting...</p>
     </div>
 
-    <div class="update-toast" id="updateToast">✓ Synced to Firebase</div>
+    <div class="update-toast" id="updateToast">✓ Synced</div>
 
     <div class="container">
         <header>
@@ -376,6 +383,9 @@
 
         <div class="devices-grid" id="devicesGrid"></div>
     </div>
+
+    <!-- noUiSlider JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -392,15 +402,26 @@
         const db = getDatabase(app);
         const devicesRef = ref(db, 'devices');
 
-        // Show toast notification
+        // Throttle for Firebase updates
+        let lastFirebaseUpdate = {};
+        const UPDATE_THROTTLE = 30; // ms
+
+        function updateFirebase(deviceId, level) {
+            const now = Date.now();
+            if (!lastFirebaseUpdate[deviceId] || now - lastFirebaseUpdate[deviceId] > UPDATE_THROTTLE) {
+                lastFirebaseUpdate[deviceId] = now;
+                const deviceRef = ref(db, `devices/${deviceId}/level`);
+                set(deviceRef, Math.round(level));
+            }
+        }
+
         function showToast() {
             const toast = document.getElementById('updateToast');
             toast.classList.add('show');
-            clearTimeout(showToast.timer);
-            showToast.timer = setTimeout(() => toast.classList.remove('show'), 800);
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => toast.classList.remove('show'), 500);
         }
 
-        // Get status from level
         function getStatus(level) {
             if (level >= 75) return { text: 'CRITICAL', cls: 'critical' };
             if (level >= 50) return { text: 'WARNING', cls: 'warning' };
@@ -413,7 +434,6 @@
             return '';
         }
 
-        // Update device card visuals
         function updateCardVisuals(card, level) {
             const barFill = card.querySelector('.bar-fill');
             const percentage = card.querySelector('.percentage-value');
@@ -430,7 +450,6 @@
             statusBadge.className = 'status-badge status-' + status.cls;
         }
 
-        // Create device card HTML
         function createDeviceCard(device) {
             const status = getStatus(device.level);
             const barClass = getBarClass(device.level);
@@ -458,10 +477,8 @@
                             <span class="slider-value-display">${Math.round(device.level)}%</span>
                         </div>
                         
-                        <div class="custom-slider-container" data-device="${device.id}">
-                            <div class="slider-track"></div>
-                            <div class="slider-fill" style="width: ${device.level}%"></div>
-                            <div class="slider-thumb" style="left: ${device.level}%"></div>
+                        <div class="slider-wrapper">
+                            <div class="noUi-slider" data-device="${device.id}"></div>
                         </div>
                         
                         <div class="quick-actions">
@@ -474,7 +491,6 @@
             `;
         }
 
-        // Render all devices
         function renderDevices(devices) {
             const grid = document.getElementById('devicesGrid');
             grid.innerHTML = devices.map(createDeviceCard).join('');
@@ -482,101 +498,53 @@
             initQuickButtons();
         }
 
-        // ========== SUPER SMOOTH SLIDER LOGIC ==========
         function initSliders() {
-            document.querySelectorAll('.custom-slider-container').forEach(container => {
-                const thumb = container.querySelector('.slider-thumb');
-                const fill = container.querySelector('.slider-fill');
-                const deviceId = container.dataset.device;
-                const card = container.closest('.device-card');
-                
-                let isDragging = false;
+            document.querySelectorAll('.noUi-slider').forEach(sliderEl => {
+                const deviceId = sliderEl.dataset.device;
+                const card = sliderEl.closest('.device-card');
+                const valueDisplay = card.querySelector('.slider-value-display');
+                const initialLevel = parseFloat(valueDisplay.textContent);
 
-                function updateSliderPosition(clientX) {
-                    const rect = container.getBoundingClientRect();
-                    let percent = ((clientX - rect.left) / rect.width) * 100;
-                    percent = Math.max(0, Math.min(100, percent));
-                    
-                    // Instant visual update
-                    thumb.style.left = percent + '%';
-                    fill.style.width = percent + '%';
-                    updateCardVisuals(card, percent);
-                    
-                    // Send to Firebase immediately on every move
+                // Create noUiSlider
+                noUiSlider.create(sliderEl, {
+                    start: [initialLevel],
+                    connect: [true, false],
+                    step: 1,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    },
+                    animate: false
+                });
+
+                // Update on slide - fires continuously and smoothly
+                sliderEl.noUiSlider.on('update', (values) => {
+                    const level = parseFloat(values[0]);
+                    updateCardVisuals(card, level);
+                    updateFirebase(deviceId, level);
+                });
+
+                // Final sync when done
+                sliderEl.noUiSlider.on('change', (values) => {
+                    const level = parseFloat(values[0]);
                     const deviceRef = ref(db, `devices/${deviceId}/level`);
-                    set(deviceRef, Math.round(percent));
-                }
-
-                // Mouse events
-                container.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    thumb.classList.add('active');
-                    updateSliderPosition(e.clientX);
-                });
-
-                document.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        e.preventDefault();
-                        updateSliderPosition(e.clientX);
-                    }
-                });
-
-                document.addEventListener('mouseup', () => {
-                    if (isDragging) {
-                        isDragging = false;
-                        thumb.classList.remove('active');
-                        showToast();
-                    }
-                });
-
-                // Touch events - optimized for mobile
-                container.addEventListener('touchstart', (e) => {
-                    isDragging = true;
-                    thumb.classList.add('active');
-                    updateSliderPosition(e.touches[0].clientX);
-                }, { passive: true });
-
-                container.addEventListener('touchmove', (e) => {
-                    if (isDragging) {
-                        e.preventDefault();
-                        updateSliderPosition(e.touches[0].clientX);
-                    }
-                }, { passive: false });
-
-                container.addEventListener('touchend', () => {
-                    if (isDragging) {
-                        isDragging = false;
-                        thumb.classList.remove('active');
-                        showToast();
-                    }
+                    set(deviceRef, Math.round(level)).then(showToast);
                 });
             });
         }
 
-        // Quick buttons
         function initQuickButtons() {
             document.querySelectorAll('.quick-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const level = parseInt(btn.dataset.level);
                     const deviceId = btn.dataset.device;
                     const card = btn.closest('.device-card');
-                    const container = card.querySelector('.custom-slider-container');
-                    const thumb = container.querySelector('.slider-thumb');
-                    const fill = container.querySelector('.slider-fill');
+                    const slider = card.querySelector('.noUi-slider');
 
-                    // Animate to position
-                    thumb.style.transition = 'left 0.2s ease';
-                    fill.style.transition = 'width 0.2s ease';
-                    thumb.style.left = level + '%';
-                    fill.style.width = level + '%';
+                    // Animate slider to value
+                    slider.noUiSlider.set(level);
                     updateCardVisuals(card, level);
 
-                    setTimeout(() => {
-                        thumb.style.transition = '';
-                        fill.style.transition = '';
-                    }, 200);
-
-                    // Update Firebase
                     const deviceRef = ref(db, `devices/${deviceId}/level`);
                     set(deviceRef, level).then(showToast);
                 });
